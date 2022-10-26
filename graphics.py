@@ -1,7 +1,12 @@
 import turtle as tt
 
+# Receive the previous radius and quantity of letters of the most long title and
+# return a number with the radius that will contain all titles of that tab level
+def _calc_radius(qty, prev_rad):
+    return
 
-def _get_pos(tab, lentext):
+
+def _calc_pos(tab, lentext):
     if tab == 0:
         return "center"
     else:
