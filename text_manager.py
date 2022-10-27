@@ -1,3 +1,6 @@
+from genericpath import getsize
+from PIL import ImageFont
+
 # With the file path, get all file's lines in a str list, an element per line
 def get_filelines(file_path) -> list[str]:
     try:
@@ -27,8 +30,7 @@ def get_all_titles(filelines) -> list[list]:
         # Look if comment exists and add all elements to all_titles list
         line_parm = line.split("#")
         for i in line_parm:
-            line_parm = i.split()
-            title.append(line_parm[0])
+            title.append(i.strip())
 
         title.insert(1, tab_count)
         all_titles.append(title)
@@ -36,8 +38,8 @@ def get_all_titles(filelines) -> list[list]:
     return all_titles
 
 
-# Receive all_titles list and adds a qty of each tab level
-def add_info_qty(all_titles):
+# Receive all_titles list and make a list with the qty of each tab level [tab0 qty, tab1 qty, tab2 qty, ...]
+def get_tab_qty(all_titles) -> list:
     highest_tab = 0
     tab_qty = []
 
@@ -56,16 +58,54 @@ def add_info_qty(all_titles):
                 qty = qty + 1
 
         tab_qty.append(qty)
+    return tab_qty
+
+
+# Receive the title and font_size and add line break if there are more than one word and it's a long phrase, then return only the title with line breaks
+def _fix_title_len(title, font_size) -> str and int:
+    font = ImageFont.truetype("times.ttf", font_size)
+    size = font.getbbox(title)
+
+    if size[0] / size[1] > 5 and title.find(" ") == -1:
+        print("nicee")
+        spacepos = [m.start() for m in re.finditer(" ", title)]
+        spacepos = min(spacepos, key=lambda x: abs(x - abs(len(title))))
+        title = title[:spacepos] + "\n" + title[spacepos + 1 :]
+        # size = font.getbbox(title)
+        # size = (size[2], size[3])
+    print(title)
+    return title
+
+
+# Receive a title and return his length and width in pixel size
+def _width_and_height(title, font_size) -> tuple:
+    font = ImageFont.truetype("times.ttf", font_size)
+    size = font.getbbox(title)
+    size = (size[2], size[3])
+    return size
+
+
+# Insert title info in all_titles list, the info in each list is the next one: [title, tab, tab_qty, font_size, title_len_and_width, comment]
+def insert_data(all_titles, tab_qty) -> list[list]:
 
     for title_data in all_titles:
         all_titles[all_titles.index(title_data)].insert(2, tab_qty[title_data[1]])
         all_titles[all_titles.index(title_data)].insert(
-            3, (highest_tab * 10) - (title_data[1] * 5)
+            3, (len(tab_qty) * 10) - (title_data[1] * 5)
         )
+        all_titles[all_titles.index(title_data)][0] = _fix_title_len(
+            all_titles[all_titles.index(title_data)][0],
+            all_titles[all_titles.index(title_data)][3],
+        )
+        all_titles[all_titles.index(title_data)].insert(
+            4, _width_and_height(title_data[0], title_data[3])
+        )
+
     return all_titles
 
 
 fl = get_filelines("file.txt")
-fl = get_all_titles(fl)
-fl = add_info_qty(fl)
-# print(fl)
+at = get_all_titles(fl)
+tq = get_tab_qty(at)
+at = insert_data(at, tq)
+print(at)
